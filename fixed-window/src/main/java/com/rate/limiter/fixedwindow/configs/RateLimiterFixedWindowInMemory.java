@@ -10,7 +10,7 @@ public class RateLimiterFixedWindowInMemory {
     private final Map<String, WindowData> requestCounts;
     private final ScheduledExecutorService executorService;
 
-    public RateLimiterFixedWindowInMemory(Builder builder) {
+    private RateLimiterFixedWindowInMemory(Builder builder) {
         this.limit = builder.limit;
         this.windowSizeMillis = builder.windowSizeMillis;
         this.executorService = builder.executorService != null
@@ -19,7 +19,12 @@ public class RateLimiterFixedWindowInMemory {
         this.requestCounts = new ConcurrentHashMap<>();
 
         // Start a periodic cleanup task
-        this.executorService.scheduleAtFixedRate(this::cleanupExpiredEntries, windowSizeMillis, windowSizeMillis, TimeUnit.MILLISECONDS);
+        this.executorService.scheduleAtFixedRate(
+                this::cleanupExpiredEntries,
+                windowSizeMillis,
+                windowSizeMillis,
+                TimeUnit.MILLISECONDS
+        );
     }
 
     public Map<String, WindowData> getRequestCounts() {
@@ -36,19 +41,23 @@ public class RateLimiterFixedWindowInMemory {
 
     private void cleanupExpiredEntries() {
         long currentTime = System.currentTimeMillis();
-        requestCounts.entrySet().removeIf(entry -> currentTime - entry.getValue().startTime >= windowSizeMillis);
+        requestCounts.entrySet().removeIf(entry -> currentTime - entry.getValue().getStartTime() >= windowSizeMillis);
     }
 
     public void shutdown() {
         executorService.shutdown();
+        try {
+            if (!executorService.awaitTermination(5, TimeUnit.SECONDS)) {
+                executorService.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            executorService.shutdownNow();
+        }
     }
 
-    /**
-     * Builder for FixedWindowRateLimiter.
-     */
     public static class Builder {
-        private int limit; // Default limit
-        private long windowSizeMillis; // Default window size (60 seconds)
+        private int limit;
+        private long windowSizeMillis;
         private ScheduledExecutorService executorService;
 
         public Builder withLimit(int limit) {
@@ -77,12 +86,9 @@ public class RateLimiterFixedWindowInMemory {
         }
     }
 
-    /**
-     * Inner class to hold window data.
-     */
     public static class WindowData {
-        private int count;
-        private long startTime;
+        private final int count;
+        private final long startTime;
 
         public WindowData(int count, long startTime) {
             this.count = count;
@@ -93,17 +99,8 @@ public class RateLimiterFixedWindowInMemory {
             return count;
         }
 
-        public void incrementCount() {
-            this.count++;
-        }
-
         public long getStartTime() {
             return startTime;
-        }
-
-        public void resetWindow(long newStartTime) {
-            this.count = 1;
-            this.startTime = newStartTime;
         }
     }
 }

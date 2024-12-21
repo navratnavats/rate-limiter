@@ -2,18 +2,18 @@ package com.ratelimiter.common.constants;
 
 public enum TimeUnit {
     MILLIS(1),
-    SEC(1000),
-    MIN(60000),
+    SECONDS(1000),
+    MINUTES(60000),
     HOURS(3600000),
-    DAY(86400000);
+    DAYS(86400000);
 
-    private Integer milliValue;
+    private final int milliValue;
 
-    private TimeUnit(Integer milliValue){
+    TimeUnit(int milliValue) {
         this.milliValue = milliValue;
     }
 
-    public Integer getMilliValue() {
+    public int getMilliValue() {
         return milliValue;
     }
 }
