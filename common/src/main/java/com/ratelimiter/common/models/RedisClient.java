@@ -14,13 +14,12 @@ import java.util.Set;
 
 public class RedisClient {
     private final List<String> nodes;
+    private final RedisServerMode redisServerMode;
     private final Integer connectionTimeout;
     private final Integer socketTimeout;
-    private final RedisServerMode redisServerMode;
     private final Integer maxAttempts;
-    private Jedis jedisClient;          // For Standalone mode
-    private JedisCluster jedisClusterClient; // For Cluster mode
-    private JedisPool jedisPool;        // Optional: Pool for Standalone
+    private JedisPool jedisPool;
+    private JedisCluster jedisClusterClient;
 
     private RedisClient(List<String> nodes, Integer connectionTimeout, Integer socketTimeout,
                         RedisServerMode redisServerMode, Integer maxAttempts) {
@@ -29,21 +28,21 @@ public class RedisClient {
         }
 
         this.nodes = nodes;
+        this.redisServerMode = redisServerMode;
         this.connectionTimeout = connectionTimeout;
         this.socketTimeout = socketTimeout;
-        this.redisServerMode = redisServerMode;
         this.maxAttempts = maxAttempts;
 
         if (redisServerMode == RedisServerMode.CLUSTER) {
-            createCluster(nodes);
+            initializeCluster(nodes);
         } else if (redisServerMode == RedisServerMode.STANDALONE) {
-            createStandaloneInstance(nodes);
+            initializeStandalone(nodes);
         } else {
             throw new IllegalArgumentException("Unsupported RedisServerMode: " + redisServerMode);
         }
     }
 
-    private void createCluster(List<String> nodes) {
+    private void initializeCluster(List<String> nodes) {
         try {
             Set<HostAndPort> jedisNodes = new HashSet<>();
             for (String node : nodes) {
@@ -60,87 +59,74 @@ public class RedisClient {
         }
     }
 
-    private void createStandaloneInstance(List<String> nodes) {
+    private void initializeStandalone(List<String> nodes) {
         if (nodes.size() != 1) {
             throw new IllegalArgumentException("Standalone instance requires exactly 1 node");
         }
 
         try {
             String[] hostPort = nodes.get(0).split(":");
-            this.jedisPool = new JedisPool(new GenericObjectPoolConfig(), hostPort[0], Integer.parseInt(hostPort[1]));
-            this.jedisClient = jedisPool.getResource();
+
+            GenericObjectPoolConfig poolConfig = new GenericObjectPoolConfig();
+            poolConfig.setMaxWaitMillis(Constants.POOL_MAX_WAIT);
+            poolConfig.setMaxTotal(30);
+
+            this.jedisPool = new JedisPool(poolConfig, hostPort[0], Integer.parseInt(hostPort[1]));
         } catch (Exception e) {
             throw new RuntimeException("Failed to initialize Redis Standalone client: " + e.getMessage(), e);
         }
     }
 
-    public Jedis getJedisClient() {
+    public JedisPool getJedisPool() {
         if (redisServerMode != RedisServerMode.STANDALONE) {
-            throw new IllegalStateException("JedisClient is available only in STANDALONE mode");
+            throw new IllegalStateException("JedisPool is only available in standalone mode.");
         }
-        return jedisClient;
+        return this.jedisPool;
     }
 
     public JedisCluster getJedisClusterClient() {
         if (redisServerMode != RedisServerMode.CLUSTER) {
-            throw new IllegalStateException("JedisClusterClient is available only in CLUSTER mode");
+            throw new IllegalStateException("JedisClusterClient is only available in cluster mode.");
         }
-        return jedisClusterClient;
+        return this.jedisClusterClient;
     }
 
-    public RedisServerMode getRedisServerMode(){
+    public RedisServerMode getRedisServerMode() {
         return this.redisServerMode;
     }
 
-    /**
-     * Close the Redis connections.
-     */
     public void close() {
-        try {
-            if (jedisClient != null) {
-                jedisClient.close();
-            }
-            if (jedisPool != null) {
-                jedisPool.close();
-            }
-            if (jedisClusterClient != null) {
-                jedisClusterClient.close();
-            }
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to close Redis connections: " + e.getMessage(), e);
-        }
+        if (jedisPool != null) jedisPool.close();
+        if (jedisClusterClient != null) jedisClusterClient.close();
     }
 
-    /**
-     * Builder class for RedisClient.
-     */
-    public static class RedisClientBuilder {
+    public static class Builder {
         private List<String> nodes;
+        private RedisServerMode redisServerMode;
         private Integer connectionTimeout = Constants.CONNECTION_TIMEOUT;
         private Integer socketTimeout = Constants.SOCKET_TIMEOUT;
-        private RedisServerMode redisServerMode;
         private Integer maxAttempts = Constants.MAX_ATTEMPTS;
 
-        public RedisClientBuilder(List<String> nodes) {
+        public Builder(List<String> nodes) {
             this.nodes = nodes;
         }
 
-        public RedisClientBuilder withServerMode(RedisServerMode redisServerMode) {
+        public Builder withRedisServerMode(RedisServerMode redisServerMode) {
             this.redisServerMode = redisServerMode;
             return this;
         }
 
-        public RedisClientBuilder withConnectionTimeout(Integer connectionTimeout) {
+        public Builder withConnectionTimeout(Integer connectionTimeout) {
             this.connectionTimeout = connectionTimeout;
             return this;
         }
 
-        public RedisClientBuilder withSocketTimeout(Integer socketTimeout) {
+        public Builder withSocketTimeout(Integer socketTimeout) {
             this.socketTimeout = socketTimeout;
             return this;
         }
 
-        public RedisClientBuilder withMaxAttempts(Integer maxAttempts) {
+        public Builder withMaxAttempts(Integer maxAttempts) {
             this.maxAttempts = maxAttempts;
             return this;
         }

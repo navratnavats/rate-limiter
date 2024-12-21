@@ -6,52 +6,52 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisCluster;
 
 public class RateLimiterFixedWindowWithRedis {
-
     private final RedisClient redisClient;
-    private final int windowSize;
-    private final RedisServerMode redisServerMode;
+    private final int windowSize; // in seconds
+    private final int limit;
 
-    public RateLimiterFixedWindowWithRedis(RedisClient redisClient, int windowSize) {
+    public RateLimiterFixedWindowWithRedis(RedisClient redisClient, int windowSize, int limit) {
         this.redisClient = redisClient;
         this.windowSize = windowSize;
-        this.redisServerMode = redisClient.getRedisServerMode();
-    }
-
-    public RedisClient getRedisClient() {
-        return redisClient;
+        this.limit = limit;
     }
 
     public int getWindowSize() {
         return windowSize;
     }
 
-    public RedisServerMode getRedisServerMode() {
-        return redisServerMode;
+    public int getLimit() {
+        return limit;
     }
 
     public long incrementKey(String redisKey) {
-        if (redisServerMode == RedisServerMode.CLUSTER) {
-            JedisCluster jedisCluster = redisClient.getJedisClusterClient();
-            return incrementInCluster(jedisCluster, redisKey);
-        } else {
-            Jedis jedis = redisClient.getJedisClient();
-            return incrementInStandalone(jedis, redisKey);
+        try {
+            if (redisClient.getRedisServerMode() == RedisServerMode.CLUSTER) {
+                return handleClusterIncrement(redisKey);
+            } else {
+                return handleStandaloneIncrement(redisKey);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Error in rate limiter: " + e.getMessage(), e);
         }
     }
 
-    private long incrementInCluster(JedisCluster jedisCluster, String redisKey) {
-        long currentCount = jedisCluster.incr(redisKey);
-        if (currentCount == 1) {
-            jedisCluster.expire(redisKey, windowSize);
+    private long handleClusterIncrement(String redisKey) {
+        JedisCluster cluster = redisClient.getJedisClusterClient();
+        long count = cluster.incr(redisKey);
+        if (count == 1) {
+            cluster.expire(redisKey, windowSize); // Set expiry for new keys
         }
-        return currentCount;
+        return count;
     }
 
-    private long incrementInStandalone(Jedis jedis, String redisKey) {
-        long currentCount = jedis.incr(redisKey);
-        if (currentCount == 1) {
-            jedis.expire(redisKey, windowSize);
+    private long handleStandaloneIncrement(String redisKey) {
+        try (Jedis jedis = redisClient.getJedisPool().getResource()) {
+            long count = jedis.incr(redisKey);
+            if (count == 1) {
+                jedis.expire(redisKey, windowSize); // Set expiry for new keys
+            }
+            return count;
         }
-        return currentCount;
     }
 }
