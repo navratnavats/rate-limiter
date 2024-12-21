@@ -6,12 +6,29 @@ import com.ratelimiter.slidingwindow.configs.RateLimiterSlidingWindow;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisCluster;
 
+/**
+ * Implementation of sliding window rate limiting using Redis.
+ */
 public class RateLimiterSlidingWindowImpl {
     private final RateLimiterSlidingWindow rateLimiterSlidingWindow;
+
+    /**
+     * Constructor to initialize the RateLimiterSlidingWindow implementation.
+     *
+     * @param rateLimiterSlidingWindow The sliding window configuration object.
+     */
 
     public RateLimiterSlidingWindowImpl(RateLimiterSlidingWindow rateLimiterSlidingWindow) {
         this.rateLimiterSlidingWindow = rateLimiterSlidingWindow;
     }
+
+    /**
+     * Checks if a request is allowed for a specific key under the sliding window rate limiting algorithm.
+     *
+     * @param rateLimiterSlidingWindow The sliding window configuration.
+     * @param rateLimitBy              The key or identifier for the request.
+     * @return true if the request is allowed, false otherwise.
+     */
 
     public boolean isAllowed(RateLimiterSlidingWindow rateLimiterSlidingWindow, String rateLimitBy) {
         final int limit = rateLimiterSlidingWindow.getLimit();

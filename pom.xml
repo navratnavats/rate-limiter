@@ -13,12 +13,6 @@
         <module>token-bucket</module>
     </modules>
 
-    <!--    <modules>-->
-<!--        <module>rate-limiter-core</module>-->
-<!--        <module>rate-limiter-fixed-window</module>-->
-<!--        <module>rate-limiter-token-bucket</module>-->
-<!--        <module>rate-limiter-redis</module>-->
-<!--    </modules>-->
 
     <properties>
         <maven.compiler.source>21</maven.compiler.source>

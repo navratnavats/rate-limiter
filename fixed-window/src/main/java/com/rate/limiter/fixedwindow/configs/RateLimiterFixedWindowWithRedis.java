@@ -5,6 +5,9 @@ import com.ratelimiter.common.constants.RedisServerMode;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisCluster;
 
+/**
+ * Configuration class for fixed window rate limiting using Redis.
+ */
 public class RateLimiterFixedWindowWithRedis {
     private final RedisClient redisClient;
     private final int windowSize; // in seconds
@@ -24,6 +27,12 @@ public class RateLimiterFixedWindowWithRedis {
         return limit;
     }
 
+    /**
+     * Increments the request count for the given Redis key.
+     *
+     * @param redisKey The key associated with the request.
+     * @return The updated request count.
+     */
     public long incrementKey(String redisKey) {
         try {
             if (redisClient.getRedisServerMode() == RedisServerMode.CLUSTER) {

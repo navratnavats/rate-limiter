@@ -3,6 +3,10 @@ package com.ratelimiter.slidingwindow.configs;
 import com.ratelimiter.common.constants.TimeUnit;
 import com.ratelimiter.common.models.RedisClient;
 
+/**
+ * Configuration class for the sliding window rate limiter.
+ */
+
 public class RateLimiterSlidingWindow {
     private final RedisClient redisClient;
     private final TimeUnit timeUnit;
@@ -16,19 +20,30 @@ public class RateLimiterSlidingWindow {
         this.limit = limit;
     }
 
-    // Getters
+    /**
+     * @return The Redis client associated with this configuration.
+     */
     public RedisClient getRedisClient() {
         return redisClient;
     }
 
+    /**
+     * @return The time unit of the sliding window.
+     */
     public TimeUnit getTimeUnit() {
         return timeUnit;
     }
 
+    /**
+     * @return The size of the sliding window.
+     */
     public int getWindowSize() {
         return windowSize;
     }
 
+    /**
+     * @return The maximum allowed requests in the sliding window.
+     */
     public int getLimit() {
         return limit;
     }
@@ -43,12 +58,21 @@ public class RateLimiterSlidingWindow {
                 '}';
     }
 
+    /**
+     * Builder class to construct a RateLimiterSlidingWindow instance.
+     */
     public static class RateLimiterSlidingWindowBuilder {
         private TimeUnit timeUnit;
         private int windowSize;
         private int limit;
         private RedisClient redisClient;
 
+        /**
+         * Sets the Redis client for this configuration.
+         *
+         * @param redisClient The Redis client.
+         * @return The builder instance.
+         */
         public RateLimiterSlidingWindowBuilder redisClient(RedisClient redisClient) {
             this.redisClient = redisClient;
             return this;

@@ -2,6 +2,9 @@ package com.rate.limiter.fixedwindow.service.redis;
 
 import com.rate.limiter.fixedwindow.configs.RateLimiterFixedWindowWithRedis;
 
+/**
+ * Implementation of fixed window rate limiting using Redis.
+ */
 public class RateLimiterFixedWindowWithRedisImpl {
     private final RateLimiterFixedWindowWithRedis fixedWindowWithRedis;
 
@@ -14,9 +17,9 @@ public class RateLimiterFixedWindowWithRedisImpl {
     }
 
     /**
-     * Checks if a request is allowed for the given key.
+     * Checks if a request is allowed for a given key under the fixed window algorithm.
      *
-     * @param key The unique identifier for the user.
+     * @param key The unique identifier for the request.
      * @return true if the request is allowed, false otherwise.
      */
     public boolean isAllowed(String key) {
@@ -37,11 +40,22 @@ public class RateLimiterFixedWindowWithRedisImpl {
     public static class Builder {
         private RateLimiterFixedWindowWithRedis fixedWindowWithRedis;
 
+        /**
+         * Sets the fixed window configuration for this implementation.
+         *
+         * @param fixedWindowWithRedis The configuration object.
+         * @return The builder instance.
+         */
         public Builder withFixedWindowWithRedis(RateLimiterFixedWindowWithRedis fixedWindowWithRedis) {
             this.fixedWindowWithRedis = fixedWindowWithRedis;
             return this;
         }
 
+        /**
+         * Builds the RateLimiterFixedWindowWithRedisImpl instance.
+         *
+         * @return A configured instance.
+         */
         public RateLimiterFixedWindowWithRedisImpl build() {
             if (fixedWindowWithRedis == null) {
                 throw new IllegalArgumentException("RateLimiterFixedWindowWithRedis is required");
