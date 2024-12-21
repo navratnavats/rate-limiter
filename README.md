@@ -164,20 +164,39 @@ RedisClient redisClient = new RedisClient.Builder(List.of("localhost:6379"))
 
 ## Key Classes and Responsibilities
 
-1. **RateLimiterFixedWindowInMemory**:
-    - In-memory implementation for fixed window rate limiting.
-    - Includes cleanup mechanisms for expired entries.
+### 1. **RateLimiterFixedWindowInMemory**
+- **Purpose**: Implements fixed window rate limiting using in-memory storage.
+- **Responsibilities**:
+    - Stores request counts for each key in a fixed time window.
+    - Periodically cleans up expired entries to free up memory.
+- **Use Case**: Ideal for single-node applications where a distributed backend is not required.
 
-2. **RateLimiterFixedWindowWithRedis**:
-    - Redis-based implementation for fixed window rate limiting.
-    - Ensures atomic operations using Redis commands.
+### 2. **RateLimiterFixedWindowWithRedis**
+- **Purpose**: Implements fixed window rate limiting using Redis for distributed systems.
+- **Responsibilities**:
+    - Utilizes Redis atomic commands like `INCR` and `EXPIRE` to manage request counts.
+    - Supports both standalone and clustered Redis setups.
+- **Use Case**: Suitable for distributed systems where rate limiting consistency across nodes is essential.
 
-3. **RateLimiterSlidingWindow**:
-    - Redis-based implementation for sliding window rate limiting.
-    - Provides more accurate rate limiting compared to fixed window.
+### 3. **RateLimiterSlidingWindow**
+- **Purpose**: Implements sliding window rate limiting using Redis for precise control.
+- **Responsibilities**:
+    - Maintains request timestamps in a Redis sorted set for each key.
+    - Dynamically removes expired timestamps to enforce sliding window limits.
+- **Use Case**: Best for scenarios requiring more accurate rate limiting than fixed window.
 
-4. **RedisClient**:
-    - Manages Redis connections (standalone or cluster).
+### 4. **RedisClient**
+- **Purpose**: Manages connections to Redis, supporting both standalone and cluster modes.
+- **Responsibilities**:
+    - Provides connection pooling and configuration management.
+    - Abstracts Redis operations for use in rate limiting.
+- **Use Case**: Utility class used internally by Redis-based rate limiters.
+
+### 5. **TimeUnit**
+- **Purpose**: Enum for representing time units (e.g., milliseconds, seconds).
+- **Responsibilities**:
+    - Converts time units to milliseconds for consistent calculations.
+- **Use Case**: Used in configuration classes to specify window durations.
 
 ---
 
@@ -202,7 +221,9 @@ Contributions are welcome! Feel free to open issues or submit pull requests.
 
 ---
 
-## License
 
-This library is licensed under the MIT License. See the `LICENSE` file for details.
+### **Future Enhancements**
+- Add support for Token Bucket algorithms.
+- Provide an external configuration file (e.g., YAML or properties) for dynamic rate limiter setup.
 
+---
