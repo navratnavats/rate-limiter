@@ -6,7 +6,7 @@
     <parent>
         <groupId>com.rate.limiter</groupId>
         <artifactId>rate-limiter</artifactId>
-        <version>1.0.0</version>
+        <version>0.0.1</version>
     </parent>
 
     <artifactId>common</artifactId>

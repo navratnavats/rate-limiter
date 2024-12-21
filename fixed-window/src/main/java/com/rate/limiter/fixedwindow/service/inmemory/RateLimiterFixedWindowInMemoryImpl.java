@@ -13,23 +13,22 @@ public class RateLimiterFixedWindowInMemoryImpl {
     }
 
     public boolean isAllowed(String key) {
+        return fixedWindowInMemory.getRequestCounts().compute(key, (k, data) -> handleRequest(data)).getCount() <= fixedWindowInMemory.getLimit();
+    }
+
+    private RateLimiterFixedWindowInMemory.WindowData handleRequest(RateLimiterFixedWindowInMemory.WindowData data) {
         long currentTime = System.currentTimeMillis();
         long windowSizeMillis = fixedWindowInMemory.getWindowSizeMillis();
-        int limit = fixedWindowInMemory.getLimit();
 
-        Map<String, RateLimiterFixedWindowInMemory.WindowData> requestCounts = fixedWindowInMemory.getRequestCounts();
-
-        RateLimiterFixedWindowInMemory.WindowData windowData = requestCounts.compute(key, (k, data) -> {
-            if (data == null || currentTime - data.getStartTime() >= windowSizeMillis) {
-                return new RateLimiterFixedWindowInMemory.WindowData(1, currentTime);
-            } else if (data.getCount() < limit) {
-                data.incrementCount();
-                return data;
-            } else {
-                return data;
-            }
-        });
-
-        return windowData != null && windowData.getCount() <= limit;
+        if (data == null || currentTime - data.getStartTime() >= windowSizeMillis) {
+            // Reset window
+            return new RateLimiterFixedWindowInMemory.WindowData(1, currentTime);
+        } else if (data.getCount() < fixedWindowInMemory.getLimit()) {
+            // Increment count
+            return new RateLimiterFixedWindowInMemory.WindowData(data.getCount() + 1, data.getStartTime());
+        } else {
+            // Return unchanged data (denied request)
+            return data;
+        }
     }
 }
